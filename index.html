@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Jade Delight</title>
+    <style type="text/css">
+        html,body,input {font-family: Times, Helvetica, Arial; color: #6A4D25; text-align: center;}
+        body {background-color: #E8E8E0;}
+        h1 {font-size: 40px; color: #423018;}
+        p {font-size: 18px;}
+        input[type=submit] {cursor: pointer; border: solid; border-width: 2px; color: #333; padding: 5px 10px; text-align: center; font-size: 15px; cursor: pointer; text-decoration: none;}
+        input[type=text] {padding: 5px 10px; font-size: 15px; width: 100px}
+        .row {display: flex;}
+		.column {flex: 40%; padding: 2px; font-family: Merriweather, Garamond, Georgia, Times;}
+    </style>
+</head>
+
+<body>
+<script language="javascript">
+
+function MenuItem(name, cost)
+{
+	this.name = name;
+	this.cost=cost;
+}
+
+menuItems = new Array(
+	new MenuItem("Chicken Chop Suey", 4.5),
+	new MenuItem("Sweet and Sour Pork", 6.25),
+	new MenuItem("Shrimp Lo Mein", 5.25),
+	new MenuItem("Moo Shi Chicken", 6.5),
+	new MenuItem("Fried Rice", 2.35)
+);
+
+function makeSelect(name, minRange, maxRange)
+{
+	var t= "";
+	t = "<select name='" + name + "' size='1'>";
+	for (j=minRange; j<=maxRange; j++)
+	   t += "<option>" + j + "</option>";
+	t+= "</select>"; 
+	return t;
+}
+
+function updateCost(event){
+	var e = event.target;
+	// Stripping index i from name format "quan"+i
+	var index = e.name.slice(-1);
+	// Getting selected value from dropdown
+	var count = e.value;
+	var cost = (menuItems[index].cost * count).toFixed(2);
+	document.getElementsByName("cost")[index].value = cost;
+
+	calculateTotals();
+}
+
+var totalPrice;
+function calculateTotals(){
+	var subtotal = 0;
+	for (var i = 0; i < menuItems.length; i++){
+		var val = document.getElementsByName("cost")[i].value;
+		subtotal += parseFloat(val, 10) || 0;
+	}
+	document.getElementById("subtotal").value = subtotal.toFixed(2);
+
+	// Mass tax
+	var tax = subtotal * .0625;
+	document.getElementById("tax").value = tax.toFixed(2);
+
+	totalPrice = subtotal + tax;
+	document.getElementById("total").value = totalPrice.toFixed(2);
+}
+
+const ERROR = 1, SUCCESS = 2;
+
+function validateForm(){
+	var lname = document.forms["orderForm"]["lname"].value;
+	var street = document.forms["orderForm"]["street"].value;
+	var city = document.forms["orderForm"]["city"].value;
+	var phone = document.forms["orderForm"]["phone"].value;
+	var p_or_d = document.forms["orderForm"]["p_or_d"].value;
+
+	// Error messages
+	if (! itemsSelected()){
+		message("Please select menu items to order.", ERROR);
+		return false;
+	}
+	if (lname == ""){
+		message("Last name must be provided for the order.", ERROR);
+		return false;
+	}
+	if (phone == ""){
+		message("Phone number must be provided for the order.", ERROR);
+		return false;
+	}
+	else if (! phone.match(/\d/g) || phone.match(/\d/g).length != 10){
+		message("Invalid phone number.", ERROR);
+		return false;
+	}
+	if (p_or_d == "delivery" && (street == "" || city == "")){
+		message("Street and City must be provided for delivery.", ERROR);
+		return false;
+	}
+
+	// Order success
+	if (p_or_d == "delivery"){
+		message(`Your order will be delivered at ${getTime(30)}. Your total is $${totalPrice.toFixed(2)}.`, SUCCESS);
+	}
+	else{
+		message(`Your order will be ready for pickup at ${getTime(15)}. Your total is $${totalPrice.toFixed(2)}.`, SUCCESS);
+	}
+	// Put this here because I don't want the form to be cleared after submitted
+	return false;
+}
+
+// Checks if user has selected any menu items
+function itemsSelected(){
+	for (var i = 0; i < menuItems.length; i++){
+		var val = document.getElementsByName("cost")[i].value;
+		val = parseFloat(val, 10) || 0;
+		if (val){
+			return true;
+		}
+	}
+	return false;
+}
+
+// Prints message to the user
+function message(msg, type){
+	if (type == ERROR){
+		msg = `<font color="#D1412A"><b>Error: </b>${msg}</font>`;
+	}
+	else if (type == SUCCESS){
+		msg = `<font color="#3F7129"><b>Success: </b>${msg}</font>`;
+	}
+	document.getElementById("message").innerHTML = msg;
+}
+
+// Get time string in hh:mm format
+function getTime(delta){
+	var d = new Date();
+	d.setMinutes(d.getMinutes() + delta);
+	var hours = d.getHours();
+	var minutes = d.getMinutes();
+
+	// 12 hour time
+	var ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+	hours = hours ? hours : 12;	// the 0 hour will also be '12'
+
+	// Single digit minutes
+	minutes = minutes < 10 ? '0'+minutes : minutes;
+	return `${hours}:${minutes} ${ampm}`;
+}
+
+</script>
+
+<h1>Jade Delight</h1>
+<form id = "orderForm" onsubmit="return validateForm()">
+
+<p>First Name: <input type="text"  name='fname' /></p>
+<p>Last Name<span style="color: #D1412A">*</span>:  <input type="text"  name='lname' /></p>
+<p>Street: <input type="text"  name='street' /></p>
+<p>City: <input type="text"  name='city' /></p>
+<p>Phone<span style="color: #D1412A">*</span>: <input type="text"  name='phone' /></p>
+<p> 
+	<input type="radio"  name="p_or_d" value = "pickup" checked="checked"/>Pickup  
+	<input type="radio"  name='p_or_d' value = 'delivery'/>
+	Delivery
+</p>
+<table border="0" cellpadding="3" align="center">
+  <tr>
+    <th>Select Item</th>
+    <th>Item Name</th>
+    <th>Cost Each</th>
+    <th>Total Cost</th>
+  </tr>
+<script language="javascript">
+
+  var s = "";
+  for (i=0; i< menuItems.length; i++)
+  {
+	  s += "<tr><td>";
+	  s += makeSelect("quan" + i, 0, 10);
+	  s += "</td><td>" + menuItems[i].name + "</td>";
+	  s += "<td> $ " + menuItems[i].cost.toFixed(2) + "</td>";
+	  s += "<td>$<input type='text' name='cost'/></td></tr>";
+  }
+  document.writeln(s);
+
+  for (i=0; i< menuItems.length; i++){
+  	document.getElementsByName(`quan${i}`)[0].onchange = updateCost;
+  }
+  
+</script>
+</table>
+
+</br>
+
+<div class="row">
+  <div class="column" style="border-style: solid; margin-left: 37%; margin-right: 37%; border-width: 1px">
+    <p>Subtotal: 
+   $<input type="text"  name='subtotal' id="subtotal" />
+	</p>
+	<p>Mass tax 6.25%:
+	  $ <input type="text"  name='tax' id="tax" />
+	</p>
+	<p>Total: $ <input type="text"  name='total' id="total" />
+	</p>
+
+  </div>
+</div>
+
+</br>
+<input type = "submit" value = "Submit Order"/>
+</br></br>
+<div id="message"></div>
+</br></br>
+
+
+</form>
+</body>
+</html>
